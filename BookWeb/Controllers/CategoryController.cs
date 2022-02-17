@@ -1,13 +1,13 @@
-﻿using BookWeb.Data;
+﻿using BookWeb.DataAccess.Repository.IRepository;
 using BookWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWeb.Controllers;
 public class CategoryController : Controller
 {
-    private readonly ApplicationDbContext _context;
+    private readonly ICategoryRepository _context;
 
-    public CategoryController(ApplicationDbContext context)
+    public CategoryController(ICategoryRepository context)
     {
         _context = context;
     }
@@ -15,7 +15,7 @@ public class CategoryController : Controller
     //Get category/page
     public IActionResult Index()
     {
-        var category = _context.Categories.ToList();
+        var category = _context.GetAll();
         return View(category);
     }
 
@@ -25,7 +25,7 @@ public class CategoryController : Controller
     //POST category/create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Category category)
+    public IActionResult Create(Category category)
     {
         if (category.Name == category.DisplayOrder.ToString())
         {
@@ -33,8 +33,8 @@ public class CategoryController : Controller
         }
         if (ModelState.IsValid)
         {
-            _context.Categories.Add(category);
-            await _context.SaveChangesAsync();
+            _context.Add(category);
+            _context.Save();
             TempData["Success"] = "Category created successfully";
             return RedirectToAction("Index");
         }
@@ -48,19 +48,19 @@ public class CategoryController : Controller
         {
             return NotFound();
         }
-        var categoryFromDb = _context.Categories.Find(id);
-        if (categoryFromDb == null)
+        var categoryFromDbFirst = _context.GetFirstOrDefault(x => x.Id == id);
+        if (categoryFromDbFirst == null)
         {
             return NotFound();
         }
 
-        return View(categoryFromDb);
+        return View(categoryFromDbFirst);
     }
 
     //POST category/edit
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Category category)
+    public IActionResult Edit(Category category)
     {
         if (category.Name == category.DisplayOrder.ToString())
         {
@@ -68,8 +68,8 @@ public class CategoryController : Controller
         }
         if (ModelState.IsValid)
         {
-            _context.Categories.Update(category);
-            await _context.SaveChangesAsync();
+            _context.Update(category);
+            _context.Save();
 
             TempData["Success"] = "Category Update successfully";
 
@@ -87,7 +87,7 @@ public class CategoryController : Controller
             return NotFound();
         }
 
-        var categoryDelete = _context.Categories.Find(id);
+        var categoryDelete = _context.GetFirstOrDefault(x => x.Id == id);
 
         if (categoryDelete == null)
         {
@@ -99,15 +99,15 @@ public class CategoryController : Controller
     //POST category/delete
     [HttpPost, ActionName("Delete")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> DeletePOST(int? id)
+    public IActionResult DeletePOST(int? id)
     {
-        var categoryDelete = await _context.Categories.FindAsync(id);
+        var categoryDelete = _context.GetFirstOrDefault(x => x.Id == id);
         if (categoryDelete == null)
         {
             return NotFound();
         }
-        _context.Categories.Remove(categoryDelete);
-        await _context.SaveChangesAsync();
+        _context.Remove(categoryDelete);
+        _context.Save();
 
         TempData["Success"] = "Category Delete successfully";
         return RedirectToAction("Index");
