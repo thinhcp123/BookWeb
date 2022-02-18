@@ -3,19 +3,20 @@ using BookWeb.Models;
 using Microsoft.AspNetCore.Mvc;
 
 namespace BookWeb.Controllers;
+[Area("Admin")]
 public class CategoryController : Controller
 {
-    private readonly ICategoryRepository _context;
+    private readonly IUnitOfWork _unitOfWork;
 
-    public CategoryController(ICategoryRepository context)
+    public CategoryController(IUnitOfWork unitOfWork)
     {
-        _context = context;
+        _unitOfWork = unitOfWork;
     }
 
     //Get category/page
     public IActionResult Index()
     {
-        var category = _context.GetAll();
+        var category = _unitOfWork.Category.GetAll();
         return View(category);
     }
 
@@ -33,8 +34,8 @@ public class CategoryController : Controller
         }
         if (ModelState.IsValid)
         {
-            _context.Add(category);
-            _context.Save();
+            _unitOfWork.Category.Add(category);
+            _unitOfWork.Save();
             TempData["Success"] = "Category created successfully";
             return RedirectToAction("Index");
         }
@@ -48,7 +49,7 @@ public class CategoryController : Controller
         {
             return NotFound();
         }
-        var categoryFromDbFirst = _context.GetFirstOrDefault(x => x.Id == id);
+        var categoryFromDbFirst = _unitOfWork.Category.GetFirstOrDefault(x => x.Id == id);
         if (categoryFromDbFirst == null)
         {
             return NotFound();
@@ -68,8 +69,8 @@ public class CategoryController : Controller
         }
         if (ModelState.IsValid)
         {
-            _context.Update(category);
-            _context.Save();
+            _unitOfWork.Category.Update(category);
+            _unitOfWork.Save();
 
             TempData["Success"] = "Category Update successfully";
 
@@ -87,7 +88,7 @@ public class CategoryController : Controller
             return NotFound();
         }
 
-        var categoryDelete = _context.GetFirstOrDefault(x => x.Id == id);
+        var categoryDelete = _unitOfWork.Category.GetFirstOrDefault(x => x.Id == id);
 
         if (categoryDelete == null)
         {
@@ -101,13 +102,13 @@ public class CategoryController : Controller
     [ValidateAntiForgeryToken]
     public IActionResult DeletePOST(int? id)
     {
-        var categoryDelete = _context.GetFirstOrDefault(x => x.Id == id);
+        var categoryDelete = _unitOfWork.Category.GetFirstOrDefault(x => x.Id == id);
         if (categoryDelete == null)
         {
             return NotFound();
         }
-        _context.Remove(categoryDelete);
-        _context.Save();
+        _unitOfWork.Category.Remove(categoryDelete);
+        _unitOfWork.Save();
 
         TempData["Success"] = "Category Delete successfully";
         return RedirectToAction("Index");
